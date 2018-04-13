@@ -2,7 +2,7 @@ import json
 import socket
 
 d = None
-with open('nodes.json') as json_file:
+with open('nodes.json', encoding='utf-8') as json_file:
     d = json.loads(json_file.read())
 
 for n in d['nodes']:
