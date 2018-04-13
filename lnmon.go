@@ -42,7 +42,7 @@ type (
 		Address     string `json:"address"`
 		Port        int    `json:"port"`
 	}
-	address []addressInfo
+	addresses []addressInfo
 
 	// msatoshi is number of millisatoshis, the main unit used in the LN protocol.
 	msatoshi int64
@@ -96,11 +96,11 @@ type (
 		// Channels holds any channels that the node has.
 		Channels channels `json:"channels"`
 
-		NodeId        nodeId  `json:"nodeid"`
-		Alias         alias   `json:"alias"`
-		Color         string  `json:"color"`
-		LastTimestamp unixTs  `json:"last_timestamp"`
-		Addresses     address `json:"addresses"`
+		NodeId        nodeId    `json:"nodeid"`
+		Alias         alias     `json:"alias"`
+		Color         string    `json:"color"`
+		LastTimestamp unixTs    `json:"last_timestamp"`
+		Addresses     addresses `json:"addresses"`
 	}
 	// invoiceRequest is a request to create a new invoice.
 	invoiceRequest struct {
@@ -192,12 +192,12 @@ type (
 
 	// getInfoResponse is the format of the getinfo response from lightning-cli.
 	getInfoResponse struct {
-		NodeId      nodeId  `json:"id"`
-		Port        int     `json:"port"`
-		Address     address `json:"address"`
-		Version     string  `json:"version"`
-		Blockheight int     `json:"blockheight"`
-		Network     string  `json:"network"`
+		NodeId      nodeId    `json:"id"`
+		Port        int       `json:"port"`
+		Address     addresses `json:"address"`
+		Version     string    `json:"version"`
+		Blockheight int       `json:"blockheight"`
+		Network     string    `json:"network"`
 	}
 	// allNodes is a map from node id to that node.
 	allNodes map[nodeId]node
@@ -416,14 +416,15 @@ func (n *node) updateChannel(cl channelListing) {
 }
 
 // String returns a human-readable description of the address.
-func (addr address) String() string {
+func (addr addresses) String() string {
 	if len(addr) == 0 {
 		return ""
 	}
-	if len(addr) != 1 {
-		return "<unsupported address>"
+	parts := make([]string, len(addr), len(addr))
+	for i, a := range addr {
+		parts[i] = fmt.Sprintf("%s:%d", a.Address, a.Port)
 	}
-	return fmt.Sprintf("%s:%d", addr[0].Address, addr[0].Port)
+	return strings.Join(parts, ", ")
 }
 
 func (n node) KnownAddress() bool {
@@ -1089,7 +1090,7 @@ func (c cli) ListPeers() (*nodes, error) {
 }
 
 // Equal returns true if the addresses are the same.
-func (addr address) Equal(other address) bool {
+func (addr addresses) Equal(other addresses) bool {
 	if len(addr) != len(other) {
 		return false
 	}
