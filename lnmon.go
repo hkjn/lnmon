@@ -1280,6 +1280,27 @@ func (cfl channelFundListing) Equal(other channelFundListing) bool {
 	return true
 }
 
+// getLightningPid returns the pid of lightningd, if it's running.
+func getLightningPid() (int, error) {
+	b, err := ioutil.ReadFile(".lightning/lightningd-bitcoin.pid")
+	if err != nil {
+		return 0, fmt.Errorf("failed to read lightningd-bitcoin.pid file: %v", err)
+	}
+	for _, line := range strings.Split(string(b), "\n") {
+		if len(line) < 1 {
+			continue
+		}
+		pid, err := strconv.Atoi(line)
+		if err != nil {
+			return 0, err
+		}
+		// TODO: understand why there's several pids listed in .pid file, and whether it can
+		// be assumed (like we do here) that the first one will be the current one.
+		return pid, nil
+	}
+	return -1, fmt.Errorf("no valid pid found in lightningd-bitcoin.pid")
+}
+
 // update brings the state in sync with the lightning-cli responses.
 //
 // Note that we reset all state between lightning-cli calls, to make sure we're not presenting stale data from earlier.
@@ -1288,22 +1309,14 @@ func (s *state) update() error {
 	s.MonVersion = lnmonVersion
 	s.Nodes = allNodes{}
 	// TODO: grab mutex here to avoid data race when we write and ServeHTTP may read.
-	ps, err := execCmd("pgrep", "-a", "lightningd")
+
+	pid, err := getLightningPid()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to find c-lightning pid: %v", err)
 	}
-	parts := strings.Split(ps, " ")
-	// Note: seems to get >= 1 parts even if pgrep returns non-success.
-	if len(parts) < 1 || len(parts[0]) == 0 {
-		return fmt.Errorf("failed to parse lightningd status: %v", ps)
-	}
-	pid, err := strconv.Atoi(parts[0])
-	if err != nil {
-		return err
-	}
-	s.pid = pid
-	for _, arg := range parts[1:] {
-		s.args = append(s.args, arg)
+	if pid != s.pid {
+		log.Printf("Found that lightningd has pid %d\n", pid)
+		s.pid = pid
 	}
 	s.gauges["running"].Set(1)
 
