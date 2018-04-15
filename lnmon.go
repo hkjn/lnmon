@@ -924,7 +924,7 @@ func execCmd(cmd string, arg ...string) (string, error) {
 	c := exec.Command(cmd, arg...)
 	stdout := bytes.Buffer{}
 	stderr := bytes.Buffer{}
-	c.Stdout = &stdout
+	c.Stdout = &stdout // TODO: cap max length of stdout/stderr buffers to few hundred chars
 	c.Stderr = &stderr
 	if err := c.Run(); err != nil {
 		if _, ok := err.(*exec.ExitError); ok {
@@ -1299,6 +1299,14 @@ func (s *state) update() error {
 	if pid != s.pid {
 		log.Printf("Found that lightningd has pid %d\n", pid)
 		s.pid = pid
+		// TODO: Maybe don't assume that lightningd always is in "pid" namespace..
+		namespace := "pid"
+		lc := prometheus.NewProcessCollector(s.pid, namespace)
+		if err := prometheus.Register(lc); err != nil {
+			log.Printf("Failed to register process collector for pid %d: %v\n", s.pid, err)
+		} else {
+			log.Printf("Registered ProcessCollector for lightningd pid %d in namespace %s\n", s.pid, namespace)
+		}
 	}
 	s.gauges["running"].Set(1)
 
@@ -1485,9 +1493,6 @@ func (s *state) reset() {
 
 // refresh updates the state.
 func refresh(s *state) {
-	// TODO: Maybe don't assume that lightningd always is in "pid" namespace..
-	namespace := "pid"
-	registeredLn := false
 	for {
 		if err := s.update(); err != nil {
 			log.Printf("Failed to update state: %v\n", err)
@@ -1495,18 +1500,6 @@ func refresh(s *state) {
 			s.reset()
 		} else {
 			s.counters["lightningd_update_successes"].Inc()
-		}
-		if s.IsRunning() {
-			if !registeredLn {
-				// TODO: Need to handle case where we registered collector to pid #1, then
-				// lightningd crashed and restarted with pid #2. Since we use --pid=ln
-				// when operating inside container, our process will die if lightningd dies anyway
-				// currently, so this is less of an issue in practice.
-				lc := prometheus.NewProcessCollector(s.pid, namespace)
-				prometheus.MustRegister(lc)
-				registeredLn = true
-				log.Printf("Registered ProcessCollector for lightningd pid %d in namespace %s\n", s.pid, namespace)
-			}
 		}
 		time.Sleep(time.Minute)
 	}
