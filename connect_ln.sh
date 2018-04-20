@@ -15,6 +15,9 @@ lightning-cli connect 0387e3780a4325eb38421fb83000a6f6c0ffa4a69ea0c81db3f00e8e50
 lightning-cli connect 02f6725f9c1c40333b67faea92fd211c183050f28df32cac3f9d69685fe9665432 104.198.32.198
 # #RECKLESS
 lightning-cli connect 035f1498c929d4cefba4701ae36a554691f526ff60b1766badd5a49b3c8b68e1d8 78.63.23.25
+
+lightning-cli connect 03e50492eab4107a773141bb419e107bda3de3d55652e6e1a41225f06a0bbf2d56 mainnet-lnd.yalls.org
+
 # mainnet.yalls.org
 lightning-cli connect 03457d3e97da4e6a01739f56c0cd168cb14962b91fb44dc3d647816c70e05e9b93 34.200.241.1
 # ln.keff.org
