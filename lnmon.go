@@ -7,7 +7,8 @@
 // supposed to look for the txout on-chain to verify the channel's existence so you can as well just
 // remember the capacity". We can if nothing else look up the funding txid via bitcoind.
 //
-// todo: move lnmon + bcmon to their own repo (need name, maybe 'nodl'?) and add back as git subtrees under hkjn.me/src.
+// TODO: Add support for doing getroute calls to arbitrary nodes (can also use arbitrary source nodes with
+// -k fromid=<nodeid>), visualize path in graph.
 package main
 
 import (
@@ -1600,6 +1601,7 @@ func (h nodeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "400 Bad Request")
 		return
 	}
+	// TODO: Find cause of frequent 404s here.. even during refresh(), we shouldn't forget nodes, but atomically switch to new data.
 	n, exists := h.s.Nodes[nodeId(nid)]
 	if !exists {
 		log.Printf("No such node %v, serving 404 for HTTP %s %q\n", nid, r.Method, r.URL.Path)
