@@ -1287,7 +1287,6 @@ func getLightningPid() (int, error) {
 // Note that we reset all state between lightning-cli calls, to make sure we're not presenting stale data from earlier.
 // This means that any failure to fetch new state from cli will result in empty state.
 func (s *state) update() error {
-	s.MonVersion = lnmonVersion
 	s.Nodes = allNodes{}
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -1719,10 +1718,12 @@ func newRouter(s *state, prefix string) (*mux.Router, error) {
 }
 
 // newState returns a new state.
-func newState() *state {
+func newState(version, prefix string) *state {
 	s := state{
-		lock:  &sync.Mutex{},
-		Nodes: allNodes{},
+		lock:       &sync.Mutex{},
+		MonVersion: version,
+		httpPrefix: httpPrefix,
+		Nodes:      allNodes{},
 		gauges: map[string]prometheus.Gauge{
 			"blockheight": prometheus.NewGauge(prometheus.GaugeOpts{
 				Namespace: counterPrefix,
@@ -1875,7 +1876,7 @@ func main() {
 		addr = ":8380"
 	}
 	log.Printf("lnmon version %q starting with http prefix %q, serving at %q..\n", lnmonVersion, httpPrefix, addr)
-	s := newState()
+	s := newState(lnmonVersion, httpPrefix)
 	router, err := newRouter(s, httpPrefix)
 	if err != nil {
 		log.Fatalf("Failed to create router: %v\n", err)
