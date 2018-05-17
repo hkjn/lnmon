@@ -204,9 +204,9 @@ type (
 	allNodes map[nodeId]node
 	// state describes the last known state.
 	state struct {
-		lock *sync.Mutex
-		// MonVersion is the version of lnmon.
+		lock        *sync.Mutex
 		MonVersion  string
+		httpPrefix  string
 		pid         int
 		args        []string
 		Alias       alias
@@ -1555,6 +1555,7 @@ func (h indexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		IsRunning                     bool
 		MonVersion                    string
+		HttpPrefix                    string
 		Alias                         alias
 		Info                          getInfoResponse
 		NumNodes                      int
@@ -1568,6 +1569,7 @@ func (h indexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}{
 		IsRunning:         h.s.IsRunning(),
 		MonVersion:        h.s.MonVersion,
+		HttpPrefix:        h.s.httpPrefix,
 		Alias:             h.s.Alias,
 		Info:              h.s.Info,
 		NumNodes:          len(h.s.Nodes),
