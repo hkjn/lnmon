@@ -254,8 +254,6 @@ const (
 )
 
 var (
-	// allState state
-
 	states = map[channelStateNum]channelState{
 		ChannelUnknownState:          "<unknown channel state>",
 		ChanneldNormalState:          "CHANNELD_NORMAL",
@@ -1868,7 +1866,13 @@ func newState() *state {
 }
 
 func main() {
-	log.Printf("lnmon version %q starting..\n", lnmonVersion)
+	if httpPrefix == "" {
+		httpPrefix = "/lnmon"
+	}
+	if addr == "" {
+		addr = ":8380"
+	}
+	log.Printf("lnmon version %q starting with http prefix %q, serving at %q..\n", lnmonVersion, httpPrefix, addr)
 	s := newState()
 	router, err := newRouter(s, httpPrefix)
 	if err != nil {
@@ -1877,9 +1881,6 @@ func main() {
 	http.Handle("/", router)
 	go refresh(s)
 
-	if addr == "" {
-		addr = ":8380"
-	}
 	server := &http.Server{Addr: addr}
 	if addr == ":443" {
 		fmt.Printf("Serving TLS at %q as %q..\n", addr, hostname)
