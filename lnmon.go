@@ -319,7 +319,7 @@ func (s channelStateNum) String() string {
 		return string(states[s])
 
 	}
-	return "Invalid channelstate " + string(s)
+	return "Invalid channelstate " + fmt.Sprint(int(s))
 }
 
 // String returns a human-readable description of the netaddr.
