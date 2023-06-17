@@ -30,6 +30,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"golang.org/x/crypto/acme/autocert"
@@ -1299,7 +1300,13 @@ func (s *state) update() error {
 		s.pid = pid
 		// TODO: Maybe don't assume that lightningd always is in "pid" namespace..
 		namespace := "pid"
-		lc := prometheus.NewProcessCollector(s.pid, namespace)
+		opts := collectors.ProcessCollectorOpts{
+			PidFn: func() (int, error) {
+				return s.pid, nil
+			},
+			Namespace: namespace,
+		}
+		lc := collectors.NewProcessCollector(opts)
 		if err := prometheus.Register(lc); err != nil {
 			log.Printf("Failed to register process collector for pid %d: %v\n", s.pid, err)
 		} else {
@@ -1326,7 +1333,7 @@ func (s *state) update() error {
 				"lightningd_args":    strings.Join(s.args, " "),
 				"network":            s.Info.Network,
 			},
-		).Set(1.0)
+		).Add(1.0)
 		s.gauges["blockheight"].Set(float64(s.Info.Blockheight))
 	}
 
@@ -1400,7 +1407,7 @@ func (s *state) update() error {
 			prometheus.Labels{
 				"node_id": string(n.NodeId),
 				"alias":   string(n.Alias),
-			}).Set(float64(n.LastTimestamp))
+			}).Add(float64(n.LastTimestamp))
 
 		for _, c := range n.Channels.OurChannels() {
 			if c.MsatsTotal > msatoshi(0) {
